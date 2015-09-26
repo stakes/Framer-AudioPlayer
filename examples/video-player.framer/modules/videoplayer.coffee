@@ -9,8 +9,8 @@ class exports.VideoPlayer extends Layer
 
 		# here's our container layer
 		super
-			width: @videowidth
-			height: @videoheight
+			width: @videowidth + 15
+			height: @videoheight + 15
 			backgroundColor: null
 
 		# create the videolayer
@@ -35,8 +35,10 @@ class exports.VideoPlayer extends Layer
 		# play/pause button event listening
 		@playcontrol.on Events.Click, =>
 			if @videolayer.player.paused
+				@_currentlyPlaying = true
 				@videolayer.player.play()
 			else
+				@_currentlyPlaying = false
 				@videolayer.player.pause()
 
 		# videolayer event listening
@@ -45,10 +47,9 @@ class exports.VideoPlayer extends Layer
 		Events.wrap(@videolayer.player).on "play", =>
 			@playcontrol.showPause()
 		Events.wrap(@videolayer.player).on "ended", =>
-			print "video ended"
+			# do nothing yet
 		Events.wrap(@videolayer.player).on "timeupdate", =>
-			print @videolayer.formatTime()
-			print @videolayer.formatTimeLeft()
+			# do nothing here yet
 
 		@videolayer.video = options.video
 
@@ -71,6 +72,9 @@ class exports.VideoPlayer extends Layer
 		get: -> @_showProgress
 		set: (showProgress) -> @setProgress(showProgress)
 
+	@define 'isPlaying',
+		get: -> @_currentlyPlaying
+
 	setProgress: (showProgress) ->
 		@_showProgress = showProgress
 
@@ -81,6 +85,7 @@ class exports.VideoPlayer extends Layer
 			backgroundColor: '#ccc'
 			min: 0
 			value: 0
+			superLayer: @
 
 		@progressBar.knob.draggable.momentum = false
 
@@ -89,8 +94,15 @@ class exports.VideoPlayer extends Layer
 		Events.wrap(@videolayer.player).on "canplay", =>
 			@progressBar.max = Math.round(@videolayer.player.duration)
 
-		@progressBar.on "change:value", =>
+		# this performs so shitty on an iPhone
+		# @progressBar.on "change:value", =>
+		# 	if @isPlaying then @videolayer.player.currentTime = @progressBar.value
+		@progressBar.knob.on Events.DragStart, =>
+			if @isPlaying then @videolayer.player.pause()
+		@progressBar.knob.on Events.DragEnd, =>
+			print "end"
 			@videolayer.player.currentTime = @progressBar.value
+			if @isPlaying then @videolayer.player.play()
 
 
 

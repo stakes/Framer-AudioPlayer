@@ -1,14 +1,17 @@
 # Set default cursor
 document.body.style.cursor = "auto"
 
+
 {VideoPlayer} = require "videoplayer"
 
 player = new VideoPlayer
 	video: "video.mp4"
-	fullscreen: true
+	width: 750
+	height: 440
 
 player.showProgress = true
-print player.showProgress
+player.center()
+
 
 # Include the module
 # {AudioPlayer} = require "audio"
