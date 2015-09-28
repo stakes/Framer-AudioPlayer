@@ -1,45 +1,30 @@
 # Set default cursor
 document.body.style.cursor = "auto"
 
+bg = new BackgroundLayer
+	backgroundColor: "#fff"
 
 {VideoPlayer} = require "videoplayer"
 
 player = new VideoPlayer
 	video: "video.mp4"
-	width: 750
-	height: 440
+	width: 700
+	height: 394
+	
+player.centerX()
+player.centerY(-50)
 
 player.showProgress = true
-player.center()
+player.progressBar.centerX()
+player.progressBar.centerY player.height/2
 
+player.showTimeElapsed = true
+player.timeElapsed.x = player.x + 50
+player.timeElapsed.centerY player.height/2 + 35
 
-# Include the module
-# {AudioPlayer} = require "audio"
-# 
-# New AudioPlayer
-# audio = new AudioPlayer 
-# 	audio: "audio.mp3"
-# 	width: 300, height: 200
-# 	image: "images/bg.png"
-# 	borderRadius: 4
-# 	
-# audio.center()
-# audio.y -= 50
-# 
-# Text
-# audio.timeStyle = { "font-size": "13px", "color": "#888" }
-# 
-# Time
-# audio.showTime = true
-# audio.time.x = audio.x
-# audio.time.centerY(136)
-# 
-# TimeLeft
-# audio.showTimeLeft = true
-# audio.timeLeft.x = audio.maxX - 30
-# audio.timeLeft.centerY(136)
-# 
-# Progress
-# audio.showProgress = true
-# audio.progressBar.centerX()
-# audio.progressBar.centerY(100)
+player.showTimeLeft = true
+player.timeLeft.maxX = player.maxX
+player.timeLeft.centerY player.height/2 + 35
+
+player.shyPlayButton = true
+player.shyControls = true
