@@ -1,0 +1,228 @@
+window.__imported__ = window.__imported__ || {};
+window.__imported__["facebook/layers.json.js"] = [
+  {
+    "maskFrame" : null,
+    "id" : "D0C043FF-CA56-4B88-80CE-94331A68BF06",
+    "visible" : true,
+    "children" : [
+
+    ],
+    "image" : {
+      "path" : "images\/Layer-feed-D0C043FF-CA56-4B88-80CE-94331A68BF06.png",
+      "frame" : {
+        "y" : 0,
+        "x" : 0,
+        "width" : 750,
+        "height" : 1334
+      }
+    },
+    "imageType" : "png",
+    "layerFrame" : {
+      "y" : 0,
+      "x" : 0,
+      "width" : 750,
+      "height" : 1334
+    },
+    "name" : "feed"
+  },
+  {
+    "maskFrame" : null,
+    "id" : "F5DC04A8-3F2D-485C-A836-AE52AA96C46E",
+    "visible" : true,
+    "children" : [
+
+    ],
+    "image" : {
+      "path" : "images\/Layer-detail-F5DC04A8-3F2D-485C-A836-AE52AA96C46E.png",
+      "frame" : {
+        "y" : 0,
+        "x" : 750,
+        "width" : 750,
+        "height" : 1334
+      }
+    },
+    "imageType" : "png",
+    "layerFrame" : {
+      "y" : 0,
+      "x" : 750,
+      "width" : 750,
+      "height" : 1334
+    },
+    "name" : "detail"
+  },
+  {
+    "maskFrame" : null,
+    "id" : "9B8EB007-6DA9-4FD5-B737-7B0D47B1A112",
+    "visible" : true,
+    "children" : [
+
+    ],
+    "image" : {
+      "path" : "images\/Layer-done-9B8EB007-6DA9-4FD5-B737-7B0D47B1A112.png",
+      "frame" : {
+        "y" : 49,
+        "x" : 1367,
+        "width" : 104,
+        "height" : 54
+      }
+    },
+    "imageType" : "png",
+    "layerFrame" : {
+      "y" : 49,
+      "x" : 1367,
+      "width" : 104,
+      "height" : 54
+    },
+    "name" : "done"
+  },
+  {
+    "maskFrame" : null,
+    "children" : [
+      {
+        "maskFrame" : {
+          "y" : 1254,
+          "x" : 1388,
+          "width" : 98,
+          "height" : 61
+        },
+        "id" : "4B6D6759-178A-4FCA-9C04-ABFEF725A0C5",
+        "visible" : true,
+        "children" : [
+
+        ],
+        "image" : {
+          "path" : "images\/Layer-likes-4B6D6759-178A-4FCA-9C04-ABFEF725A0C5.png",
+          "frame" : {
+            "y" : 1254,
+            "x" : 1388,
+            "width" : 98,
+            "height" : 61
+          }
+        },
+        "imageType" : "png",
+        "layerFrame" : {
+          "y" : 1254,
+          "x" : 1388,
+          "width" : 98,
+          "height" : 61
+        },
+        "name" : "likes"
+      },
+      {
+        "maskFrame" : {
+          "y" : 1248,
+          "x" : 750,
+          "width" : 378,
+          "height" : 75
+        },
+        "id" : "A3F15EC1-C14D-4BD5-85D4-12B0552478AD",
+        "visible" : true,
+        "children" : [
+
+        ],
+        "image" : {
+          "path" : "images\/Layer-controls-A3F15EC1-C14D-4BD5-85D4-12B0552478AD.png",
+          "frame" : {
+            "y" : 1248,
+            "x" : 750,
+            "width" : 378,
+            "height" : 75
+          }
+        },
+        "imageType" : "png",
+        "layerFrame" : {
+          "y" : 1248,
+          "x" : 750,
+          "width" : 378,
+          "height" : 75
+        },
+        "name" : "controls"
+      }
+    ],
+    "id" : "1ABEA6D8-7752-44D8-B45A-F84F2E7A7762",
+    "visible" : true,
+    "imageType" : "png",
+    "layerFrame" : {
+      "y" : 1248,
+      "x" : 750,
+      "width" : 721,
+      "height" : 75
+    },
+    "name" : "overlay"
+  },
+  {
+    "maskFrame" : null,
+    "id" : "99DFC506-D3C8-442F-A538-3DE0CDB7C6C6",
+    "visible" : true,
+    "children" : [
+
+    ],
+    "image" : {
+      "path" : "images\/Layer-hd-99DFC506-D3C8-442F-A538-3DE0CDB7C6C6.png",
+      "frame" : {
+        "y" : 829,
+        "x" : 1443,
+        "width" : 27,
+        "height" : 14
+      }
+    },
+    "imageType" : "png",
+    "layerFrame" : {
+      "y" : 829,
+      "x" : 1443,
+      "width" : 27,
+      "height" : 14
+    },
+    "name" : "hd"
+  },
+  {
+    "maskFrame" : null,
+    "id" : "F05585EC-E1B8-4F15-82A4-38BBED18F575",
+    "visible" : true,
+    "children" : [
+
+    ],
+    "image" : {
+      "path" : "images\/Layer-pausebutton-F05585EC-E1B8-4F15-82A4-38BBED18F575.png",
+      "frame" : {
+        "y" : 820,
+        "x" : 780,
+        "width" : 24,
+        "height" : 32
+      }
+    },
+    "imageType" : "png",
+    "layerFrame" : {
+      "y" : 820,
+      "x" : 780,
+      "width" : 24,
+      "height" : 32
+    },
+    "name" : "pausebutton"
+  },
+  {
+    "maskFrame" : null,
+    "id" : "1473970C-1BD1-4C5E-8A15-9DC9605868E5",
+    "visible" : true,
+    "children" : [
+
+    ],
+    "image" : {
+      "path" : "images\/Layer-playbutton-1473970C-1BD1-4C5E-8A15-9DC9605868E5.png",
+      "frame" : {
+        "y" : 821,
+        "x" : 778,
+        "width" : 28,
+        "height" : 30
+      }
+    },
+    "imageType" : "png",
+    "layerFrame" : {
+      "y" : 821,
+      "x" : 778,
+      "width" : 28,
+      "height" : 30
+    },
+    "name" : "playbutton"
+  }
+]
