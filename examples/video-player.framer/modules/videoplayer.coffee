@@ -4,9 +4,10 @@ class exports.VideoPlayer extends Layer
 
 		# play/pause control
 		@controlheight = 80
+		@playimage = 'images/play.png'
+		@pauseimage = 'images/pause.png'
 
 		@controlsArray = []
-		@controlsAnimations = []
 
 		@videowidth = if options.fullscreen then Screen.width else options.width
 		@videoheight = if options.fullscreen then Screen.height else options.height
@@ -23,6 +24,9 @@ class exports.VideoPlayer extends Layer
 			height: @videoheight
 			superLayer: @
 			backgroundColor: '#000'
+			name: "videolayer"
+		if options.autoplay then @videolayer.player.autoplay = true
+		if options.muted then @videolayer.player.muted = true
 
 		# create play/pause button
 		@playcontrol = new Layer
@@ -30,42 +34,48 @@ class exports.VideoPlayer extends Layer
 			height: @controlheight
 			superLayer: @videolayer
 			backgroundColor: null
-		@playcontrol.y = @videolayer.height
-		@playcontrol.showPlay = -> @image = 'images/play.png'
-		@playcontrol.showPause = -> @image = 'images/pause.png'
+			name: "playcontrol"
+
+		@playcontrol.showPlay = => @playcontrol.image = @playimage
+		@playcontrol.showPause = => @playcontrol.image = @pauseimage
 		@playcontrol.showPlay()
 		@playcontrol.center()
 
 		# play/pause button event listening
-		@videolayer.on Events.Click, =>
+		bindTo = if options.constrainToButton then @playcontrol else @videolayer
+		bindTo.on Events.Click, =>
 			if @videolayer.player.paused
+				@emit "controls:play"
 				@_currentlyPlaying = true
 				@videolayer.player.play()
 				@fadePlayButton() if @_shyPlayButton
 				@fadeControls() if @_shyControls
 			else
+				@emit "controls:pause"
 				@_currentlyPlaying = false
 				@videolayer.player.pause()
-				@fadeButtonAnimation.stop() if @fadeButtonAnimation
-				for animation in @controlsAnimations
-					animation.stop()
-				for layer in @controlsArray
-					layer.opacity = 1
+				@playcontrol.animateStop()
 				@playcontrol.opacity = 1
+				for layer in @controlsArray
+					layer.animateStop()
+					layer.opacity = 1
+				
 
 		# videolayer event listening
 		Events.wrap(@videolayer.player).on "pause", =>
+			@emit "video:pause"
 			@playcontrol.showPlay() unless @isScrubbing
 		Events.wrap(@videolayer.player).on "play", =>
+			@emit "video:play"
 			@playcontrol.showPause()
 		Events.wrap(@videolayer.player).on "ended", =>
+			@emit "video:ended"
 			@_currentlyPlaying = false
 			@videolayer.player.pause()
-			@fadeButtonAnimation.stop() if @fadeButtonAnimation
+			@playcontrol.animateStop()
 			@playcontrol.opacity = 1
-			for animation in @controlsAnimations
-					animation.stop()
 			for layer in @controlsArray
+				layer.animateStop()
 				layer.opacity = 1
 		@videolayer.video = options.video
 
@@ -86,7 +96,6 @@ class exports.VideoPlayer extends Layer
 			sec = Math.floor(sec % 60)
 			sec = if sec >= 10 then sec else '0' + sec
 			return "#{min}:#{sec}"
-
 
 	@define 'showProgress',
 		get: -> @_showProgress
@@ -112,8 +121,19 @@ class exports.VideoPlayer extends Layer
 		get: -> @_shyControls
 		set: (shyControls) -> @setShyControls(shyControls)
 
+	@define 'playButtonImage',
+		get: -> @playimage
+		set: (playButtonImage) -> @setPlayButtonImage(playButtonImage)
+
+	@define 'pauseButtonImage',
+		get: -> @pauseimage
+		set: (pauseButtonImage) -> @setPauseButtonImage(pauseButtonImage)
+
 	@define 'isPlaying',
 		get: -> @_currentlyPlaying
+
+	@define 'player',
+		get: -> @videolayer.player
 
 
 	setProgress: (showProgress) ->
@@ -126,6 +146,7 @@ class exports.VideoPlayer extends Layer
 			backgroundColor: '#ccc'
 			min: 0
 			value: 0
+			name: "progressBar"
 		@controlsArray.push @progressBar
 
 		@progressBar.knob.draggable.momentum = false
@@ -150,23 +171,19 @@ class exports.VideoPlayer extends Layer
 	setShyPlayButton: (shyPlayButton) ->
 		@_shyPlayButton = shyPlayButton
 	fadePlayButton: () ->
-		@fadeButtonAnimation = new Animation
-			layer: @playcontrol
+		@playcontrol.animate
 			properties:
 				opacity: 0
 			time: 2
-		@fadeButtonAnimation.start()
 
 	setShyControls: (shyControls) ->
 		@_shyControls = shyControls
 	fadeControls: () ->
 		for layer, index in @controlsArray
-			@controlsAnimations[index] = new Animation
-				layer: layer
+			layer.animate
 				properties:
 					opacity: 0
 				time: 2
-			@controlsAnimations[index].start()
 		
 	setTimeElapsed: (showTimeElapsed) ->
 		@_showTimeElapsed = showTimeElapsed
@@ -215,5 +232,14 @@ class exports.VideoPlayer extends Layer
 			@timeTotal.html = "0:00"
 			Events.wrap(@videolayer.player).on "loadedmetadata", =>
 				@timeTotal.html = @videolayer.formatTimeLeft()
+
+	setPlayButtonImage: (image) =>
+		@playimage = image
+		@playcontrol.image = image
+		@playcontrol.showPlay = -> @image = image
+
+	setPauseButtonImage: (image) =>
+		@pauseimage = image
+		@playcontrol.showPause = -> @image = image
 
 

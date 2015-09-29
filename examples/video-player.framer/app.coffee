@@ -27,4 +27,3 @@ player.timeLeft.maxX = player.maxX
 player.timeLeft.centerY player.height/2 + 35
 
 player.shyPlayButton = true
-player.shyControls = true
