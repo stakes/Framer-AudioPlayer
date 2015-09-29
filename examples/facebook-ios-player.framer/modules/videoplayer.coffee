@@ -129,9 +129,6 @@ class exports.VideoPlayer extends Layer
 		get: -> @pauseimage
 		set: (pauseButtonImage) -> @setPauseButtonImage(pauseButtonImage)
 
-	@define 'isPlaying',
-		get: -> @_currentlyPlaying
-
 	@define 'player',
 		get: -> @videolayer.player
 

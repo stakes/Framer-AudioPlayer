@@ -4,8 +4,15 @@ imports = Framer.Importer.load "imported/facebook"
 # Set device background 
 Framer.Device.background.style.background = 
 	"linear-gradient(0deg, #384778 0%, #4f6ba5 100%)"
+	
+Framer.Defaults.Animation =
+	curve: "ease-out"
+	time: .3
 
 {VideoPlayer} = require "videoplayer"
+{Bars} = require "bars"
+
+detailControlsArray = [imports.hd]
 
 isFeed = true
 isControlsShowing = false
@@ -20,8 +27,6 @@ detailControls = new Layer
 doneButton = new Layer
 	width: 104, height: 54, maxX: Screen.width-30, y: 50, opacity: 0
 	image: "images/done.png"
-	
-detailControlsArray = [detailControls, doneButton, imports.hd]
 
 # create and position the VideoPlayer
 video = new VideoPlayer
@@ -47,9 +52,19 @@ video.playcontrol.width = video.playcontrol.height = 42
 video.playcontrol.visible = false
 video.playcontrol.x = 20
 
+# make bouncy bars in the feed
+bars = new Bars
+	barPadding: 2
+	barWith: 8
+bars.maxX = video.maxX - 10
+bars.maxY = video.maxY - 10
+bars.opacity = .7
+
+
 toDetailView = ->
 	isFeed = false
-	video.player.muted = true
+	video.player.muted = false
+	unless video.isPlaying then video.player.play()
 	video.animate
 		properties:
 			x: 0
@@ -58,19 +73,27 @@ toDetailView = ->
 			height: 422
 			shadowY: 0
 			shadowBlur: 0
+		curve: "spring(200,22,1)"
 	video.videolayer.animate
 		properties:
 			width: 750
 			height: 422
+	bars.opacity = 0
 	detailBg.scaleY = 0
 	detailBg.opacity = 1
 	detailBg.animate
 		properties:
 			scaleY: 1
+	detailControls.animateStop()
 	detailControls.animate
+		delay: .3
+		time: .1
 		properties: 
 			opacity: 1
+	doneButton.animateStop()
 	doneButton.animate
+		delay: .3
+		time: .1
 		properties: 
 			opacity: 1
 	isControlsShowing = true
@@ -83,7 +106,10 @@ toDetailView = ->
 	imports.hd.x = 692
 	imports.hd.y = video.timeLeft.y + 7
 	imports.hd.bringToFront()
-	showControls()
+	video.progressBar.opacity = video.timeLeft.opacity =
+		video.timeElapsed.opacity = video.playcontrol.opacity =
+		imports.hd.opacity = 0
+	showControls(true)
 
 toFeedView = ->
 	isFeed = true
@@ -95,11 +121,17 @@ toFeedView = ->
 			width:  video.originalFrame.width
 			height:  video.originalFrame.height
 			shadowY: 4
-			shadowBlur: 10		
+			shadowBlur: 10	
+		curve: "spring(200,22,1)"	
 	video.videolayer.animate
 		properties:
 			width:  video.originalFrame.width
 			height:  video.originalFrame.height
+	unless video.player.paused
+		bars.animate
+			properties:
+				opacity: .7
+			delay: .25
 	detailBg.animate
 		properties:
 			opacity: 0
@@ -111,11 +143,13 @@ toFeedView = ->
 			opacity: 0
 	hideControls()
 			
-showControls = ->
+showControls = (isDelay) ->
 	isControlsShowing = true
+	delay = if isDelay then .75 else 0
 	for layer in detailControlsArray
 		layer.animateStop()
 		layer.animate
+			delay: delay
 			properties:
 				opacity: 1
 	
@@ -124,6 +158,7 @@ hideControls = ->
 	for layer in detailControlsArray
 		layer.animateStop()
 		layer.animate
+			time: .1
 			properties:
 				opacity: 0
 
@@ -174,19 +209,11 @@ detailControlsArray.push video.playcontrol
 detailControlsArray.push video.timeElapsed
 detailControlsArray.push video.timeLeft
 
-# fade play button and controls out
-# video.shyPlayButton = true
-# video.shyControls = true
-# listen for events to fade out overlay also
+# fade controls out by hand
 # video.on "controls:play", ->
 # 	imports.overlay.animate
 # 		properties:
 # 			opacity: 0
 # 		time: 2
-# video.on "controls:pause", ->
-# 	imports.overlay.animateStop()
-# 	imports.overlay.opacity = 1
-# video.on "video:ended", ->
-# 	imports.overlay.animateStop()
-# 	imports.overlay.opacity = 1
+
 
