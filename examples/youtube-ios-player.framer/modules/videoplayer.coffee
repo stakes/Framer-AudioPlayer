@@ -1,240 +1,281 @@
 class exports.VideoPlayer extends Layer
 
-	constructor: (options={}) ->
+  constructor: (options={}) ->
 
-		# play/pause control
-		@controlheight = 80
-		@playimage = 'images/play.png'
-		@pauseimage = 'images/pause.png'
+    # instance vars for layers we will create
+    @videoLayer = null
+    @playButton = null
 
-		@controlsArray = []
+    # instance vars for layers we may create
+    @progessBar = null
+    @timeElapsed = null
+    @timeLeft = null
+    @timeTotal = null
 
-		@videowidth = if options.fullscreen then Screen.width else options.width
-		@videoheight = if options.fullscreen then Screen.height else options.height
+    # internal instance vars we may create
+    @_currentlyPlaying = null
+    @_shyPlayButton = null
+    @_shyControls = null
+    @_isScrubbing = null
+    @_showProgress = null
+    @_showTimeElapsed = null
+    @_showTimeLeft = null
+    @_showTimeTotal = null
+    @_controlsArray = []
 
-		# here's our container layer
-		super
-			width: @videowidth
-			height: @videoheight
-			backgroundColor: null
+    # play/pause control
+    @playimage = "images/play.png"
+    @pauseimage = "images/pause.png"
 
-		# create the videolayer
-		@videolayer = new VideoLayer
-			width: @videowidth
-			height: @videoheight
-			superLayer: @
-			backgroundColor: '#000'
-			name: "videolayer"
+    options.playButtonDimensions ?= 80
+    options.backgroundColor ?= "#000"
+    options.width ?= 480
+    options.height ?= 270
+    if options.fullscreen
+      options.width = Screen.width
+      options.height = Screen.height
 
-		# create play/pause button
-		@playcontrol = new Layer
-			width: @controlheight
-			height: @controlheight
-			superLayer: @videolayer
-			backgroundColor: null
-			name: "playcontrol"
-		@playcontrol.y = @videolayer.height
-		@playcontrol.showPlay = => @playcontrol.image = @playimage
-		@playcontrol.showPause = => @playcontrol.image = @pauseimage
-		@playcontrol.showPlay()
-		@playcontrol.center()
+    # here's our container layer
+    super
+      width: options.width
+      height: options.height
+      backgroundColor: null
 
-		# play/pause button event listening
-		@videolayer.on Events.Click, =>
-			if @videolayer.player.paused
-				@emit "controls:play"
-				@_currentlyPlaying = true
-				@videolayer.player.play()
-				@fadePlayButton() if @_shyPlayButton
-				@fadeControls() if @_shyControls
-			else
-				@emit "controls:pause"
-				@_currentlyPlaying = false
-				@videolayer.player.pause()
-				@playcontrol.animateStop()
-				@playcontrol.opacity = 1
-				for layer in @controlsArray
-					layer.animateStop()
-					layer.opacity = 1
-				
+    # create the videolayer
+    @videoLayer = new VideoLayer
+      width: options.width
+      height: options.height
+      superLayer: @
+      backgroundColor: options.backgroundColor
+      name: "videoLayer"
+    if options.autoplay then @videoLayer.player.autoplay = true
+    if options.muted then @videoLayer.player.muted = true
 
-		# videolayer event listening
-		Events.wrap(@videolayer.player).on "pause", =>
-			@emit "video:pause"
-			@playcontrol.showPlay() unless @isScrubbing
-		Events.wrap(@videolayer.player).on "play", =>
-			@emit "video:play"
-			@playcontrol.showPause()
-		Events.wrap(@videolayer.player).on "ended", =>
-			@emit "video:ended"
-			@_currentlyPlaying = false
-			@videolayer.player.pause()
-			@playcontrol.animateStop()
-			@playcontrol.opacity = 1
-			for layer in @controlsArray
-				layer.animateStop()
-				layer.opacity = 1
-		@videolayer.video = options.video
+    # create play/pause button
+    @playButton = new Layer
+      width: options.playButtonDimensions
+      height: options.playButtonDimensions
+      superLayer: @videoLayer
+      backgroundColor: null
+      name: "playButton"
 
-		# time text styles
-		@timeStyle = { "font-size": "20px", "color": "#000" }
+    # set up the default playbutton
+    @playButton.showPlay = => @playButton.image = @playimage
+    @playButton.showPause = => @playButton.image = @pauseimage
+    @playButton.showPlay()
+    @playButton.center()
 
-		# time utilities
-		@videolayer.formatTime = ->
-			sec = Math.floor(@player.currentTime)
-			min = Math.floor(sec / 60)
-			sec = Math.floor(sec % 60)
-			sec = if sec >= 10 then sec else '0' + sec
-			return "#{min}:#{sec}"
+    # listen for events on the whole videolayer
+    # or alternately, just on the play/pause button
+    bindTo = if options.constrainToButton then @playButton else @videoLayer
+    bindTo.on Events.Click, =>
+      if @videoLayer.player.paused
+        @emit "controls:play"
+        @_currentlyPlaying = true
+        @videoLayer.player.play()
+        @fadePlayButton() if @_shyPlayButton
+        @fadeControls() if @_shyControls
+      else
+        @emit "controls:pause"
+        @_currentlyPlaying = false
+        @videoLayer.player.pause()
+        @playButton.animateStop()
+        @playButton.opacity = 1
+        for layer in @_controlsArray
+          layer.animateStop()
+          layer.opacity = 1
+        
+    # event listening on the videoLayer
+    Events.wrap(@videoLayer.player).on "pause", =>
+      @emit "video:pause"
+      @playButton.showPlay() unless @_isScrubbing
+    Events.wrap(@videoLayer.player).on "play", =>
+      @emit "video:play"
+      @playButton.showPause()
+    Events.wrap(@videoLayer.player).on "ended", =>
+      @emit "video:ended"
+      @_currentlyPlaying = false
+      @videoLayer.player.pause()
+      @playButton.animateStop()
+      @playButton.opacity = 1
+      for layer in @_controlsArray
+        layer.animateStop()
+        layer.opacity = 1
+    @videoLayer.video = options.video
 
-		@videolayer.formatTimeLeft = ->
-			sec = Math.floor(@player.duration) - Math.floor(@player.currentTime)
-			min = Math.floor(sec / 60)
-			sec = Math.floor(sec % 60)
-			sec = if sec >= 10 then sec else '0' + sec
-			return "#{min}:#{sec}"
+    # default time text styles
+    @timeStyle = { "font-size": "20px", "color": "#000" }
 
-
-	@define 'showProgress',
-		get: -> @_showProgress
-		set: (showProgress) -> @setProgress(showProgress)
-
-	@define 'showTimeElapsed',
-		get: -> @_showTimeElapsed
-		set: (showTimeElapsed) -> @setTimeElapsed(showTimeElapsed)
-
-	@define 'showTimeLeft',
-		get: -> @_showTimeLeft
-		set: (showTimeLeft) -> @setTimeLeft(showTimeLeft)
-
-	@define 'showTimeTotal',
-		get: -> @_showTimeTotal
-		set: (showTimeTotal) -> @setTimeTotal(showTimeTotal)
-
-	@define 'shyPlayButton', 
-		get: -> @_shyPlayButton
-		set: (shyPlayButton) -> @setShyPlayButton(shyPlayButton)
-
-	@define 'shyControls', 
-		get: -> @_shyControls
-		set: (shyControls) -> @setShyControls(shyControls)
-
-	@define 'playButtonImage',
-		get: -> @playimage
-		set: (playButtonImage) -> @setPlayButtonImage(playButtonImage)
-
-	@define 'pauseButtonImage',
-		get: -> @pauseimage
-		set: (pauseButtonImage) -> @setPauseButtonImage(pauseButtonImage)
-
-	@define 'isPlaying',
-		get: -> @_currentlyPlaying
+    # time utilities
+    @videoLayer.formatTime = ->
+      sec = Math.floor(@player.currentTime)
+      min = Math.floor(sec / 60)
+      sec = Math.floor(sec % 60)
+      sec = if sec >= 10 then sec else "0" + sec
+      return "#{min}:#{sec}"
+    @videoLayer.formatTimeLeft = ->
+      sec = Math.floor(@player.duration) - Math.floor(@player.currentTime)
+      min = Math.floor(sec / 60)
+      sec = Math.floor(sec % 60)
+      sec = if sec >= 10 then sec else "0" + sec
+      return "#{min}:#{sec}"
 
 
-	setProgress: (showProgress) ->
-		@_showProgress = showProgress
+  # Getters n' setters
+  @define "video",
+    get: -> @videoLayer.player.src
+    set: (video) ->
+      @videoLayer.player.src = video
 
-		@progressBar = new SliderComponent
-			width: 440
-			height: 10
-			knobSize: 40
-			backgroundColor: '#ccc'
-			min: 0
-			value: 0
-			name: "progressBar"
-		@controlsArray.push @progressBar
+  @define "showProgress",
+    get: -> @_showProgress
+    set: (showProgress) -> @setProgress(showProgress)
 
-		@progressBar.knob.draggable.momentum = false
+  @define "showTimeElapsed",
+    get: -> @_showTimeElapsed
+    set: (showTimeElapsed) -> @setTimeElapsed(showTimeElapsed)
 
-		Events.wrap(@videolayer.player).on "timeupdate", =>
-			@progressBar.knob.midX = @progressBar.pointForValue(@videolayer.player.currentTime)
-		Events.wrap(@videolayer.player).on "canplay", =>
-			@progressBar.max = Math.round(@videolayer.player.duration)
+  @define "showTimeLeft",
+    get: -> @_showTimeLeft
+    set: (showTimeLeft) -> @setTimeLeft(showTimeLeft)
 
-		# scrubbing performs kind of shitty on an iPhone
-		# and none of this is that great with very large videos
-		@progressBar.on "change:value", =>
-			if @isPlaying then @videolayer.player.currentTime = @progressBar.value
-		@progressBar.knob.on Events.DragStart, =>
-			@isScrubbing = true
-			if @isPlaying then @videolayer.player.pause()
-		@progressBar.knob.on Events.DragEnd, =>
-			@isScrubbing = false
-			@videolayer.player.currentTime = @progressBar.value
-			if @isPlaying then @videolayer.player.play()
+  @define "showTimeTotal",
+    get: -> @_showTimeTotal
+    set: (showTimeTotal) -> @setTimeTotal(showTimeTotal)
 
-	setShyPlayButton: (shyPlayButton) ->
-		@_shyPlayButton = shyPlayButton
-	fadePlayButton: () ->
-		@playcontrol.animate
-			properties:
-				opacity: 0
-			time: 2
+  @define "shyPlayButton", 
+    get: -> @_shyPlayButton
+    set: (shyPlayButton) -> @setShyPlayButton(shyPlayButton)
 
-	setShyControls: (shyControls) ->
-		@_shyControls = shyControls
-	fadeControls: () ->
-		for layer, index in @controlsArray
-			layer.animate
-				properties:
-					opacity: 0
-				time: 2
-		
-	setTimeElapsed: (showTimeElapsed) ->
-		@_showTimeElapsed = showTimeElapsed
+  @define "shyControls", 
+    get: -> @_shyControls
+    set: (shyControls) -> @setShyControls(shyControls)
 
-		if showTimeElapsed is true
-			@timeElapsed = new Layer
-				backgroundColor: "transparent"
-				name: "currentTime"
-			@controlsArray.push @timeElapsed
+  @define "playButtonImage",
+    get: -> @playimage
+    set: (playButtonImage) -> @setPlayButtonImage(playButtonImage)
 
-			@timeElapsed.style = @timeStyle
-			@timeElapsed.html = "0:00"
+  @define "pauseButtonImage",
+    get: -> @pauseimage
+    set: (pauseButtonImage) -> @setPauseButtonImage(pauseButtonImage)
 
-			Events.wrap(@videolayer.player).on "timeupdate", =>
-				@timeElapsed.html = @videolayer.formatTime()
-
-	setTimeLeft: (showTimeLeft) =>
-		@_showTimeLeft = showTimeLeft
-
-		if showTimeLeft is true
-			@timeLeft = new Layer
-				backgroundColor: "transparent"
-				name: "timeLeft"
-			@controlsArray.push @timeLeft
-
-			@timeLeft.style = @timeStyle
-
-			@timeLeft.html = "-0:00"
-			Events.wrap(@videolayer.player).on "loadedmetadata", =>
-				@timeLeft.html = "-" + @videolayer.formatTimeLeft()
-
-			Events.wrap(@videolayer.player).on "timeupdate", =>
-				@timeLeft.html = "-" + @videolayer.formatTimeLeft()
-
-	setTimeTotal: (showTimeTotal) =>
-		@_showTimeTotal = showTimeTotal
-
-		if showTimeTotal is true
-			@timeTotal = new Layer
-				backgroundColor: "transparent"
-				name: "timeTotal"
-			@controlsArray.push @timeTotal
-
-			@timeTotal.style = @timeStyle
-
-			@timeTotal.html = "0:00"
-			Events.wrap(@videolayer.player).on "loadedmetadata", =>
-				@timeTotal.html = @videolayer.formatTimeLeft()
-
-	setPlayButtonImage: (image) =>
-		@playimage = image
-		@playcontrol.image = image
-		@playcontrol.showPlay = -> @image = image
-
-	setPauseButtonImage: (image) =>
-		@pauseimage = image
-		@playcontrol.showPause = -> @image = image
+  @define "player",
+    get: -> @videoLayer.player
 
 
+  # show the progress bar
+  setProgress: (showProgress) ->
+    @_showProgress = showProgress
+
+    # create and set up the progress bar with default styles
+    @progressBar = new SliderComponent
+      width: 440
+      height: 10
+      knobSize: 40
+      backgroundColor: "#ccc"
+      min: 0
+      value: 0
+      name: "progressBar"
+    @_controlsArray.push @progressBar
+    @progressBar.knob.draggable.momentum = false
+
+    # set and automate progress bar
+    Events.wrap(@videoLayer.player).on "canplay", =>
+      @progressBar.max = Math.round(@videoLayer.player.duration)
+    Events.wrap(@videoLayer.player).on "timeupdate", =>
+      @progressBar.knob.midX = @progressBar.pointForValue(@videoLayer.player.currentTime)
+
+    # seeking/scrubbing events
+    # and btw none of this works super great using very large videos
+    @progressBar.on "change:value", =>
+      if @isPlaying then @videoLayer.player.currentTime = @progressBar.value
+    @progressBar.knob.on Events.DragStart, =>
+      @_isScrubbing = true
+      if @isPlaying then @videoLayer.player.pause()
+    @progressBar.knob.on Events.DragEnd, =>
+      @_isScrubbing = false
+      @videoLayer.player.currentTime = @progressBar.value
+      if @isPlaying then @videoLayer.player.play()
+
+  # set flag for shy play button
+  setShyPlayButton: (shyPlayButton) ->
+    @_shyPlayButton = shyPlayButton
+  # fade out the play button
+  fadePlayButton: () ->
+    @playButton.animate
+      properties:
+        opacity: 0
+      time: 2
+
+  # set flag for shy controls
+  setShyControls: (shyControls) ->
+    @_shyControls = shyControls
+  # shortcut to fade out all the controls
+  fadeControls: () ->
+    for layer, index in @_controlsArray
+      layer.animate
+        properties:
+          opacity: 0
+        time: 2
+    
+  # show and increment elapsed time
+  setTimeElapsed: (showTimeElapsed) ->
+    @_showTimeElapsed = showTimeElapsed
+
+    if showTimeElapsed is true
+      @timeElapsed = new Layer
+        backgroundColor: "transparent"
+        name: "currentTime"
+      @_controlsArray.push @timeElapsed
+
+      @timeElapsed.style = @timeStyle
+      @timeElapsed.html = "0:00"
+
+      Events.wrap(@videoLayer.player).on "timeupdate", =>
+        @timeElapsed.html = @videoLayer.formatTime()
+
+  # show and decrement time remaining
+  setTimeLeft: (showTimeLeft) =>
+    @_showTimeLeft = showTimeLeft
+
+    if showTimeLeft is true
+      @timeLeft = new Layer
+        backgroundColor: "transparent"
+        name: "timeLeft"
+      @_controlsArray.push @timeLeft
+
+      @timeLeft.style = @timeStyle
+
+      @timeLeft.html = "-0:00"
+      Events.wrap(@videoLayer.player).on "loadedmetadata", =>
+        @timeLeft.html = "-" + @videoLayer.formatTimeLeft()
+
+      Events.wrap(@videoLayer.player).on "timeupdate", =>
+        @timeLeft.html = "-" + @videoLayer.formatTimeLeft()
+
+  # show a static timestamp for total duration
+  setTimeTotal: (showTimeTotal) =>
+    @_showTimeTotal = showTimeTotal
+
+    if showTimeTotal is true
+      @timeTotal = new Layer
+        backgroundColor: "transparent"
+        name: "timeTotal"
+      @_controlsArray.push @timeTotal
+
+      @timeTotal.style = @timeStyle
+
+      @timeTotal.html = "0:00"
+      Events.wrap(@videoLayer.player).on "loadedmetadata", =>
+        @timeTotal.html = @videoLayer.formatTimeLeft()
+
+  # set a new image for the play button
+  setPlayButtonImage: (image) =>
+    @playimage = image
+    @playButton.image = image
+    @playButton.showPlay = -> @image = image
+
+  # set a new image for the pause button
+  setPauseButtonImage: (image) =>
+    @pauseimage = image
+    @playButton.showPause = -> @image = image

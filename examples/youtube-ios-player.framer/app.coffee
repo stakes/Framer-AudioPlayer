@@ -1,3 +1,7 @@
+# Made with Framer
+# By Jay Stakelon
+# www.framerjs.com
+
 # This imports all the layers for "youtube" into youtubeLayers
 imports = Framer.Importer.load "imported/youtube"
 
@@ -17,10 +21,10 @@ video.centerX()
 # set play and pause button images
 video.playButtonImage = "images/playbutton.png"
 video.pauseButtonImage = "images/pausebutton.png"
-video.playcontrol.width = 61
-video.playcontrol.height = 71
+video.playButton.width = 61
+video.playButton.height = 71
 
-# move the inactive overlay buttons in front of the player
+# move the static/inactive overlay buttons in front of the player
 imports.overlay.placeBefore video
 
 # show, position and customize the progress bar
@@ -52,7 +56,8 @@ video.timeTotal.y = video.height - 52
 # fade play button and controls out
 video.shyPlayButton = true
 video.shyControls = true
-# listen for events to fade out overlay also
+
+# listen for events to fade out static overlay also
 video.on "controls:play", ->
 	imports.overlay.animate
 		properties:
