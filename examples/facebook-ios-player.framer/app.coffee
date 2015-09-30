@@ -1,3 +1,7 @@
+# Made with Framer
+# By Jay Stakelon
+# www.framerjs.com
+
 # This imports all the layers for "facebook" into facebookLayers
 imports = Framer.Importer.load "imported/facebook"
 
@@ -12,8 +16,10 @@ Framer.Defaults.Animation =
 {VideoPlayer} = require "videoplayer"
 {Bars} = require "bars"
 
+# we'll add all of our controls to this later
 detailControlsArray = [imports.hd]
 
+# setup and static elements
 isFeed = true
 isControlsShowing = false
 detailBg = new Layer
@@ -27,6 +33,7 @@ detailControls = new Layer
 doneButton = new Layer
 	width: 104, height: 54, maxX: Screen.width-30, y: 50, opacity: 0
 	image: "images/done.png"
+overlayControlsArray = [detailControls, doneButton]
 
 # create and position the VideoPlayer
 video = new VideoPlayer
@@ -48,9 +55,9 @@ video.shadowBlur = 10
 # set play and pause button images
 video.playButtonImage = "images/fb-playbutton.png"
 video.pauseButtonImage = "images/fb-pausebutton.png"
-video.playcontrol.width = video.playcontrol.height = 42
-video.playcontrol.visible = false
-video.playcontrol.x = 20
+video.playButton.width = video.playButton.height = 42
+video.playButton.visible = false
+video.playButton.x = 20
 
 # make bouncy bars in the feed
 bars = new Bars
@@ -60,7 +67,7 @@ bars.maxX = video.maxX - 10
 bars.maxY = video.maxY - 10
 bars.opacity = .7
 
-
+# transition from feed to detail view
 toDetailView = ->
 	isFeed = false
 	video.player.muted = false
@@ -74,7 +81,7 @@ toDetailView = ->
 			shadowY: 0
 			shadowBlur: 0
 		curve: "spring(200,22,1)"
-	video.videolayer.animate
+	video.videoLayer.animate
 		properties:
 			width: 750
 			height: 422
@@ -84,33 +91,35 @@ toDetailView = ->
 	detailBg.animate
 		properties:
 			scaleY: 1
-	detailControls.animateStop()
-	detailControls.animate
-		delay: .3
-		time: .1
-		properties: 
-			opacity: 1
-	doneButton.animateStop()
-	doneButton.animate
-		delay: .3
-		time: .1
-		properties: 
-			opacity: 1
+	for layer in overlayControlsArray
+		layer.animateStop()
+		layer.animate
+			delay: .3
+			time: .1
+			properties: 
+				opacity: 1
 	isControlsShowing = true
 	video.progressBar.y = Screen.height/2 + video.height/2 - 17
 	video.timeElapsed.y = video.progressBar.y - 15
 	video.timeLeft.y = video.progressBar.y - 15
-	video.playcontrol.superLayer = null
-	video.playcontrol.visible = true
-	video.playcontrol.y = video.progressBar.y - 22
+	video.playButton.superLayer = null
+	video.playButton.visible = true
+	video.playButton.y = video.progressBar.y - 22
 	imports.hd.x = 692
 	imports.hd.y = video.timeLeft.y + 7
 	imports.hd.bringToFront()
 	video.progressBar.opacity = video.timeLeft.opacity =
-		video.timeElapsed.opacity = video.playcontrol.opacity =
+		video.timeElapsed.opacity = video.playButton.opacity =
 		imports.hd.opacity = 0
-	showControls(true)
+	showControls(true, true)
+	Utils.delay .5, ->
+		video.draggable.enabled = true
+		video.draggable.momentum = false
+		video.on Events.DragStart, startVideoDrag
+		video.on Events.DragMove, moveVideoDrag
+		video.on Events.DragEnd, endVideoDrag
 
+# transition from detail view back to feed
 toFeedView = ->
 	isFeed = true
 	video.player.muted = true
@@ -123,7 +132,7 @@ toFeedView = ->
 			shadowY: 4
 			shadowBlur: 10	
 		curve: "spring(200,22,1)"	
-	video.videolayer.animate
+	video.videoLayer.animate
 		properties:
 			width:  video.originalFrame.width
 			height:  video.originalFrame.height
@@ -135,36 +144,44 @@ toFeedView = ->
 	detailBg.animate
 		properties:
 			opacity: 0
-	detailControls.animate
-		properties: 
-			opacity: 0
-	doneButton.animate
-		properties: 
-			opacity: 0
+	for layer in overlayControlsArray
+		layer.animate
+			properties: 
+				opacity: 0
 	hideControls()
-			
-showControls = (isDelay) ->
+	video.draggable.enabled = false
+	video.off Events.DragStart, startVideoDrag
+	video.off Events.DragMove, moveVideoDrag
+	video.off Events.DragEnd, endVideoDrag
+	
+# instead of using shyControls = true, show controls by hand
+showControls = (isDelay, skipdetailControls) ->
 	isControlsShowing = true
 	delay = if isDelay then .75 else 0
-	for layer in detailControlsArray
+	controlsArray = unless skipdetailControls then detailControlsArray.concat overlayControlsArray else detailControlsArray
+	for layer in controlsArray
 		layer.animateStop()
 		layer.animate
 			delay: delay
 			properties:
 				opacity: 1
-	
+
+# instead of using shyControls = true, hide controls by hand
 hideControls = ->
 	isControlsShowing = false
-	for layer in detailControlsArray
+	controlsArray = detailControlsArray.concat overlayControlsArray
+	for layer in controlsArray
 		layer.animateStop()
 		layer.animate
 			time: .1
 			properties:
 				opacity: 0
+	
+	
 
+# manage transitions
 toggleControls = ->
 	if isControlsShowing then hideControls() else showControls()
-	
 video.on Events.Click, ->
 	if isFeed
 		toDetailView()
@@ -172,15 +189,6 @@ video.on Events.Click, ->
 		toggleControls()
 doneButton.on Events.Click, ->
 	unless isFeed then toFeedView()
-
-
-
-
-
-
-
-
-
 
 # show, position and customize the progress bar
 video.showProgress = true
@@ -204,16 +212,34 @@ video.timeElapsed.x = 84
 video.showTimeLeft = true
 video.timeLeft.x = video.progressBar.maxX + 28
 
+# add controls to our array
 detailControlsArray.push video.progressBar
-detailControlsArray.push video.playcontrol
+detailControlsArray.push video.playButton
 detailControlsArray.push video.timeElapsed
 detailControlsArray.push video.timeLeft
 
-# fade controls out by hand
-# video.on "controls:play", ->
-# 	imports.overlay.animate
-# 		properties:
-# 			opacity: 0
-# 		time: 2
-
-
+# video drag methods for bonus points
+startVideoDrag = (evt) ->
+	offset = if evt.targetTouches then evt.targetTouches[0].screenY - 460 else evt.offsetY
+	if offset > 320
+		video.draggable.vertical = video.draggable.horizontal = 0
+	else
+		video.draggable.vertical = video.draggable.horizontal = 1
+moveVideoDrag = (evt)->
+	if isControlsShowing then hideControls()
+	abs = Math.abs (video.midY - Screen.height/2)
+	opacity = Utils.modulate abs, [0, 500], [1, 0]
+	detailBg.opacity = opacity
+endVideoDrag = ->
+	if Math.abs(video.midY - Screen.height/2) > 100
+		toFeedView()
+	else if video.draggable.isMoving
+		detailBg.animate
+			properties:
+				opacity: 1
+			time: .1
+		video.animate
+			properties:
+				x: 0
+				midY: Screen.height/2
+			curve: "spring(200,22,1)"
