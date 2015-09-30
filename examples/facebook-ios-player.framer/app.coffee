@@ -217,6 +217,7 @@ detailControlsArray.push video.progressBar
 detailControlsArray.push video.playButton
 detailControlsArray.push video.timeElapsed
 detailControlsArray.push video.timeLeft
+layer.opacity = 0 for layer in detailControlsArray
 
 # video drag methods for bonus points
 startVideoDrag = (evt) ->
