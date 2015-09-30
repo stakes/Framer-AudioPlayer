@@ -188,14 +188,14 @@ class exports.VideoPlayer extends Layer
     # seeking/scrubbing events
     # and btw none of this works super great using very large videos
     @progressBar.on "change:value", =>
-      if @isPlaying then @videoLayer.player.currentTime = @progressBar.value
+      if @_currentlyPlaying then @videoLayer.player.currentTime = @progressBar.value
     @progressBar.knob.on Events.DragStart, =>
       @_isScrubbing = true
-      if @isPlaying then @videoLayer.player.pause()
+      if @_currentlyPlaying then @videoLayer.player.pause()
     @progressBar.knob.on Events.DragEnd, =>
       @_isScrubbing = false
       @videoLayer.player.currentTime = @progressBar.value
-      if @isPlaying then @videoLayer.player.play()
+      if @_currentlyPlaying then @videoLayer.player.play()
 
   # set flag for shy play button
   setShyPlayButton: (shyPlayButton) ->
